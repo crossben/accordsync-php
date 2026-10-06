@@ -8,7 +8,7 @@ use Accord\Core\Protocol;
 use Accord\Testing\Contract;
 use PHPUnit\Framework\TestCase;
 
-/** P1 makes the core pass every vector; for now, check the contract is there and readable. */
+/** The contract is there and readable; the vector tests (VectorsTest, RandomVectorsTest) use it. */
 final class ContractTest extends TestCase
 {
     public function testSpeaksProtocolVersion1(): void
