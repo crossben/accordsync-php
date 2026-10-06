@@ -1,0 +1,53 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * accord migrate                     apply the migrations to ACCORD_DATABASE_URL
+ * accord compact <definition.php>    compact once; the file returns AccordServer::define(...)
+ *
+ * The framework bridges provide `artisan accord:*` and `bin/console accord:*`; this is for plain PHP
+ * deployments and cron (`accord compact` hourly, like the TypeScript server's default interval).
+ */
+
+use Accord\Server\AccordServer;
+use Accord\Server\Database;
+use Accord\Server\ServerDefinition;
+
+foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../../autoload.php', __DIR__ . '/../../../vendor/autoload.php'] as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        break;
+    }
+}
+
+$usage = "usage: accord migrate | accord compact <definition.php>   (ACCORD_DATABASE_URL=postgres://…)\n";
+$url = getenv('ACCORD_DATABASE_URL');
+if (!is_string($url) || $url === '') {
+    fwrite(STDERR, "ACCORD_DATABASE_URL is required\n" . $usage);
+    exit(2);
+}
+try {
+    switch ($argv[1] ?? '') {
+        case 'migrate':
+            AccordServer::migrate(Database::connect($url));
+            echo "accord: database is up to date\n";
+            break;
+        case 'compact':
+            $file = $argv[2] ?? '';
+            $def = is_file($file) ? require $file : null;
+            if (!$def instanceof ServerDefinition) {
+                fwrite(STDERR, "accord compact: $file must return AccordServer::define(...)\n");
+                exit(2);
+            }
+            echo json_encode(AccordServer::compact($def, Database::connect($url)), JSON_THROW_ON_ERROR), "\n";
+            break;
+        default:
+            fwrite(STDERR, $usage);
+            exit(2);
+    }
+} catch (Throwable $e) {
+    fwrite(STDERR, 'accord: ' . $e->getMessage() . "\n");
+    exit(1);
+}

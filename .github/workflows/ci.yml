@@ -45,3 +45,56 @@ jobs:
       - run: php tools/sync-contract.php --check
         env:
           ACCORD_APP_DIR: accord-src
+
+  # The PHP server against the shared server conformance suite (app/conformance), plus the PHPUnit
+  # tests that need PostgreSQL and the TypeScript migrator (ledger interop, ADR-P02).
+  conformance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: accord
+          POSTGRES_PASSWORD: accord
+          POSTGRES_DB: accord
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U accord" --health-interval 2s --health-timeout 5s --health-retries 20
+    env:
+      ACCORD_DATABASE_URL: postgres://accord:accord@127.0.0.1:5432/accord
+      ACCORD_TEST_DATABASE_URL: postgres://accord:accord@127.0.0.1:5432/accord
+      ACCORD_APP_DIR: ${{ github.workspace }}/accord-src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: crossben/accordsync
+          path: accord-src
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: accord-src/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: accord-src/pnpm-lock.yaml
+      - run: composer install --no-interaction --no-progress
+      - run: pnpm install --frozen-lockfile
+        working-directory: accord-src
+      - run: vendor/bin/phpunit --testsuite server
+      - name: Start the PHP conformance server
+        run: |
+          nohup tools/conformance/run.sh > harness.log 2>&1 &
+          for i in $(seq 1 50); do curl -sf http://127.0.0.1:8801/health && break; sleep 0.2; done
+      - run: pnpm --filter @accordsync/conformance test
+        working-directory: accord-src
+        env:
+          ACCORD_URL: http://127.0.0.1:8801
+          ACCORD_CONTROL_URL: http://127.0.0.1:8802
+      - if: failure()
+        run: cat harness.log
