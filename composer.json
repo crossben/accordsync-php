@@ -1,0 +1,54 @@
+{
+    "name": "accordsync/monorepo",
+    "description": "Monorepo of the Accord PHP packages.",
+    "type": "project",
+    "license": "Apache-2.0",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "accordsync/core": "0.2.0",
+                    "accordsync/server": "0.2.0",
+                    "accordsync/laravel": "0.2.0",
+                    "accordsync/symfony": "0.2.0"
+                }
+            }
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "accordsync/core": "^0.2",
+        "accordsync/server": "^0.2",
+        "accordsync/laravel": "^0.2",
+        "accordsync/symfony": "^0.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1",
+        "friendsofphp/php-cs-fixer": "^3.75"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Accord\\Core\\Tests\\": "packages/core/tests/",
+            "Accord\\Server\\Tests\\": "packages/server/tests/",
+            "Accord\\Laravel\\Tests\\": "packages/laravel/tests/",
+            "Accord\\Symfony\\Tests\\": "packages/symfony/tests/",
+            "Accord\\Testing\\": "tools/testing/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse",
+        "cs": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "sync-contract": "php tools/sync-contract.php"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

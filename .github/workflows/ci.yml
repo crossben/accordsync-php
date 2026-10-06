@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * *' # daily: catches a contract change in crossben/accordsync
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+        env:
+          PHP_CS_FIXER_IGNORE_ENV: 1
+      - run: vendor/bin/phpstan analyse --no-progress
+      - run: vendor/bin/phpunit
+
+  # The committed contract/ must match the Accord repository (golden vectors, protocol schemas).
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: crossben/accordsync
+          path: accord-src
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - run: php tools/sync-contract.php --check
+        env:
+          ACCORD_APP_DIR: accord-src

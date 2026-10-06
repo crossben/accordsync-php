@@ -1,0 +1,32 @@
+{
+    "name": "accordsync/server",
+    "description": "The Accord sync server for PHP on PostgreSQL, framework-agnostic (PSR-15).",
+    "type": "library",
+    "license": "Apache-2.0",
+    "homepage": "https://accord.benhattab.pro",
+    "keywords": [
+        "offline-first",
+        "sync",
+        "crdt",
+        "local-first"
+    ],
+    "require": {
+        "php": ">=8.3",
+        "accordsync/core": "^0.2",
+        "ext-pdo_pgsql": "*",
+        "psr/http-message": "^2.0",
+        "psr/http-server-handler": "^1.0",
+        "firebase/php-jwt": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Accord\\Server\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Accord\\Server\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable"
+}

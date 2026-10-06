@@ -1,0 +1,29 @@
+{
+    "name": "accordsync/core",
+    "description": "Accord's merge core for PHP: hybrid logical clocks, operations, lww, counter, set and conflict.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "homepage": "https://accord.benhattab.pro",
+    "keywords": [
+        "offline-first",
+        "sync",
+        "crdt",
+        "local-first"
+    ],
+    "require": {
+        "php": ">=8.3",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Accord\\Core\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Accord\\Core\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable"
+}

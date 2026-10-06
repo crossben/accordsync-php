@@ -1,0 +1,31 @@
+{
+    "name": "accordsync/symfony",
+    "description": "Accord sync server for Symfony: bundle, configuration, routes and console commands.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "homepage": "https://accord.benhattab.pro",
+    "keywords": [
+        "offline-first",
+        "sync",
+        "crdt",
+        "local-first"
+    ],
+    "require": {
+        "php": ">=8.3",
+        "accordsync/server": "^0.2",
+        "symfony/http-kernel": "^7.2",
+        "symfony/config": "^7.2",
+        "symfony/dependency-injection": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Accord\\Symfony\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Accord\\Symfony\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable"
+}

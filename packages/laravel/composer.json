@@ -1,0 +1,36 @@
+{
+    "name": "accordsync/laravel",
+    "description": "Accord sync server for Laravel: service provider, config, routes and artisan commands.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "homepage": "https://accord.benhattab.pro",
+    "keywords": [
+        "offline-first",
+        "sync",
+        "crdt",
+        "local-first"
+    ],
+    "require": {
+        "php": ">=8.3",
+        "accordsync/server": "^0.2",
+        "illuminate/support": "^11.0 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Accord\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Accord\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Accord\\Laravel\\AccordServiceProvider"
+            ]
+        }
+    }
+}

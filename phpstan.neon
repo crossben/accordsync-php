@@ -1,0 +1,8 @@
+parameters:
+    level: max
+    paths:
+        - packages/core/src
+        - packages/server/src
+        - packages/laravel/src
+        - packages/symfony/src
+        - tools
