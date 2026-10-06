@@ -1,0 +1,8 @@
+# DBAL only: Accord uses this connection's PDO (accord.database.connection), so it must be pdo_pgsql.
+# Persistent: PHP otherwise opens a connection per request (PostgreSQL's SCRAM handshake is ~10 ms).
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        driver: pdo_pgsql
+        server_version: '16'
+        persistent: true

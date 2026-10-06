@@ -1,6 +1,6 @@
 # ADR-P08: touchDevice commits with synchronous_commit = off
 
-**Status:** accepted (P2)
+**Status:** accepted (P2; approved by the owner 2026-10-06)
 
 ## Decision
 

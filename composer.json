@@ -29,8 +29,10 @@
         "friendsofphp/php-cs-fixer": "^3.75",
         "nyholm/psr7": "^1.8",
         "nyholm/psr7-server": "^1.1",
+        "orchestra/testbench": "^11.3",
         "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^11.5"
+        "phpunit/phpunit": "^11.5",
+        "symfony/framework-bundle": "^7.4"
     },
     "autoload-dev": {
         "psr-4": {

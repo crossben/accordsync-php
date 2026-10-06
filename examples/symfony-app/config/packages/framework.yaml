@@ -1,0 +1,4 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    # The sync API is stateless (JWT): no session.
+    session: false

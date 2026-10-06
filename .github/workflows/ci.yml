@@ -98,3 +98,119 @@ jobs:
           ACCORD_CONTROL_URL: http://127.0.0.1:8802
       - if: failure()
         run: cat harness.log
+
+  # The mixed-server fleet (interop/, plan-php.md §0 point 3): the TypeScript reference server and
+  # the PHP server on one PostgreSQL database at once, TypeScript devices sending each request to
+  # either, with lost requests and responses, a mid-run compaction and scope changes.
+  mixed-fleet:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: accord
+          POSTGRES_PASSWORD: accord
+          POSTGRES_DB: accord
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U accord" --health-interval 2s --health-timeout 5s --health-retries 20
+    env:
+      ACCORD_DATABASE_URL: postgres://accord:accord@127.0.0.1:5432/accord
+      ACCORD_APP_DIR: ${{ github.workspace }}/accord-src
+      ACCORD_FLEET_SEEDS: 1,2,3,4,5,6,7,8,9,10
+      ACCORD_FLEET_LOGS: ${{ github.workspace }}/fleet-logs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: crossben/accordsync
+          path: accord-src
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: accord-src/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: accord-src/pnpm-lock.yaml
+      - run: composer install --no-interaction --no-progress
+      - run: pnpm install --frozen-lockfile
+        working-directory: accord-src
+      - run: mkdir -p fleet-logs && interop/run.sh
+      - if: failure()
+        run: tail -n 200 fleet-logs/*
+
+  # accordsync/laravel and accordsync/symfony: the example apps (examples/) against the shared server
+  # conformance suite, each served by PHP's built-in server with 16 workers (ADR-P10).
+  frameworks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: accord
+          POSTGRES_PASSWORD: accord
+          POSTGRES_DB: accord
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U accord" --health-interval 2s --health-timeout 5s --health-retries 20
+    env:
+      # Real environment variables win over the apps' .env files.
+      DB_URL: postgres://accord:accord@127.0.0.1:5432/accord
+      DATABASE_URL: postgresql://accord:accord@127.0.0.1:5432/accord?serverVersion=16&charset=utf8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: crossben/accordsync
+          path: accord-src
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: accord-src/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: accord-src/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: accord-src
+      - run: composer install --no-interaction --no-progress
+        working-directory: examples/laravel-app
+      - run: composer install --no-interaction --no-progress
+        working-directory: examples/symfony-app
+      - name: Start the Laravel app
+        run: |
+          nohup examples/laravel-app/serve.sh > laravel.log 2>&1 &
+          for i in $(seq 1 100); do curl -sf http://127.0.0.1:8845/accord/health && curl -sf -o /dev/null 'http://127.0.0.1:8846/token?sub=ci' && break; sleep 0.2; done
+          # Warm every worker (opcache, persistent connection) before the timing-sensitive 429 test.
+          for i in $(seq 1 64); do curl -s -o /dev/null http://127.0.0.1:8845/accord/health & done; wait
+      - name: Conformance suite against Laravel
+        run: pnpm --filter @accordsync/conformance test
+        working-directory: accord-src
+        env:
+          ACCORD_URL: http://127.0.0.1:8845/accord
+          ACCORD_CONTROL_URL: http://127.0.0.1:8846
+      - name: Start the Symfony app
+        run: |
+          nohup examples/symfony-app/serve.sh > symfony.log 2>&1 &
+          for i in $(seq 1 100); do curl -sf http://127.0.0.1:8847/accord/health && curl -sf -o /dev/null 'http://127.0.0.1:8848/token?sub=ci' && break; sleep 0.2; done
+          # Warm every worker (opcache, persistent connection) before the timing-sensitive 429 test.
+          for i in $(seq 1 64); do curl -s -o /dev/null http://127.0.0.1:8847/accord/health & done; wait
+      - name: Conformance suite against Symfony
+        run: pnpm --filter @accordsync/conformance test
+        working-directory: accord-src
+        env:
+          ACCORD_URL: http://127.0.0.1:8847/accord
+          ACCORD_CONTROL_URL: http://127.0.0.1:8848
+      - if: failure()
+        run: cat laravel.log symfony.log || true

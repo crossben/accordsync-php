@@ -1,0 +1,12 @@
+accord:
+    # Clients use https://your-app/accord as their server URL.
+    prefix: accord
+    database:
+        # Empty: use the Doctrine DBAL connection below (pdo_pgsql).
+        url: '%env(default::ACCORD_DATABASE_URL)%'
+        connection: default
+    rate_limit:
+        # Shared by every worker: cache.app is the filesystem on one host; use Redis on several.
+        cache_pool: cache.app
+        # The framework's lock (LOCK_DSN), shared the same way.
+        lock_factory: lock.factory

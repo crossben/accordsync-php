@@ -37,9 +37,13 @@ function jsonFiles(string $dir): array
 }
 
 $problems = [];
-foreach (['vectors', 'protocol/v1'] as $part) {
+foreach (['vectors', 'protocol/v1', 'conformance'] as $part) {
     $source = jsonFiles("$app/$part");
     $current = jsonFiles("$root/contract/$part");
+    if ($part === 'conformance') {
+        // Only the profile: the rest of conformance/ is the TypeScript suite itself.
+        $source = array_intersect_key($source, ['profile.json' => true]);
+    }
     foreach (array_unique([...array_keys($source), ...array_keys($current)]) as $name) {
         if (($source[$name] ?? null) === ($current[$name] ?? null)) {
             continue;

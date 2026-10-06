@@ -1,0 +1,45 @@
+{
+    "name": "accordsync/example-laravel-app",
+    "description": "A minimal Laravel app serving Accord with the conformance profile (test fixture).",
+    "type": "project",
+    "license": "Apache-2.0",
+    "private": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../packages/*",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "accordsync/core": "0.2.0",
+                    "accordsync/server": "0.2.0",
+                    "accordsync/laravel": "0.2.0",
+                    "accordsync/symfony": "0.2.0"
+                }
+            }
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "accordsync/laravel": "^0.2",
+        "laravel/framework": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Accord\\Examples\\": "../shared/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
