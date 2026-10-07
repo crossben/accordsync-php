@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Accord\Server\Tests;
 
 use Accord\Core\Json;
+use Accord\Core\JsonObject;
 use Accord\Core\Wire;
 use Accord\Server\Sync;
+use Accord\Testing\Contract;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -35,5 +37,33 @@ final class OpHashTest extends TestCase
         self::assertSame('79afed57da10de5c6d7c9de46eb31a912c4e8ad8bd1c36b2afab9d9462a5f618', Sync::opHash($a));
         $b = Wire::encode(Wire::decode(Json::decode('{"kind":"inc","by":3,"op_id":"d:8","record":"dossier:x","field":"visits","hlc":"1700000000002:00000:d"}')));
         self::assertNotSame(Sync::opHash($a), Sync::opHash($b));
+    }
+
+    /** @return iterable<string, array{JsonObject, string, string}> contract/vectors/op-hash/op-hash.json */
+    public static function vectors(): iterable
+    {
+        $file = Contract::dir() . '/vectors/op-hash/op-hash.json';
+        $doc = Json::decode((string) file_get_contents($file));
+        self::assertInstanceOf(JsonObject::class, $doc);
+        self::assertSame(1, $doc->get('version'));
+        $cases = $doc->get('cases');
+        self::assertIsArray($cases);
+        foreach ($cases as $case) {
+            self::assertInstanceOf(JsonObject::class, $case);
+            $op = $case->get('op');
+            self::assertInstanceOf(JsonObject::class, $op);
+            yield (string) $case->get('name') => [$op, (string) $case->get('canonical'), (string) $case->get('hash')];
+        }
+    }
+
+    #[DataProvider('vectors')]
+    public function testGoldenVector(JsonObject $op, string $canonical, string $hash): void
+    {
+        self::assertSame($canonical, Json::canonical($op));
+        self::assertSame($hash, Sync::opHash($op));
+        // As the server stores it: decoded and re-encoded, unchanged for these ops.
+        $wire = Wire::encode(Wire::decode($op));
+        self::assertSame($canonical, Json::canonical($wire));
+        self::assertSame($hash, Sync::opHash($wire));
     }
 }

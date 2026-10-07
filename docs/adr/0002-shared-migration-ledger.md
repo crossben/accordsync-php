@@ -8,7 +8,7 @@ The PHP server uses the exact PostgreSQL schema of `@accordsync/server`: same ta
 functions (`accord_pos()`, `accord_horizon()`, `accord_xid_offset()`) and append-only trigger. It
 records its migrations in the **same ledger** the TypeScript server uses, Kysely's
 `kysely_migration` table (`name`, `timestamp`), under the same names (`0001_meta` …
-`0006_compacted_op_hash`), and takes the same lock while migrating: Kysely's PostgreSQL adapter
+`0007_pending_scope_delta`), and takes the same lock while migrating: Kysely's PostgreSQL adapter
 takes the session advisory lock `pg_advisory_lock(3853314791062309107)` (released with
 `pg_advisory_unlock`), not a row lock. The ledger tables and the `migration_lock` row are created as
 Kysely creates them; the PHP migrator also locks that row `FOR UPDATE` inside its transaction, which

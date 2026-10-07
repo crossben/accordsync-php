@@ -35,7 +35,7 @@ final class MigratorTest extends PgTestCase
         $pdo->exec("insert into feed (kind, record, op_id, op, scopes) values ('op', 'dossier:1', 'dev:4', '{}', '{a}'), ('op', 'dossier:1', 'dev:9', '{}', '{a}')");
         $pdo->exec("insert into devices (device_id, sub) values ('dev', 'alice')");
         $pdo->exec("insert into compacted_ops (op_id) values ('dev:2')");
-        self::assertSame(['0005_concurrent_pushes', '0006_compacted_op_hash'], (new Migrator($pdo))->migrateToLatest());
+        self::assertSame(['0005_concurrent_pushes', '0006_compacted_op_hash', '0007_pending_scope_delta'], (new Migrator($pdo))->migrateToLatest());
         self::assertSame(3, (int) $pdo->query('select accord_xid_offset()')?->fetchColumn());
         self::assertSame([1, 2], array_map(intval(...), $pdo->query('select pos from feed order by seq')?->fetchAll(\PDO::FETCH_COLUMN) ?: []));
         self::assertSame(['max_op_seq' => 9, 'needs_resync' => true, 'cursor' => 0], $pdo->query("select max_op_seq, needs_resync, cursor from devices")?->fetch(\PDO::FETCH_ASSOC));
@@ -71,7 +71,7 @@ final class MigratorTest extends PgTestCase
         // Half and half: TypeScript up to 0003, PHP the rest, TypeScript again.
         self::tsMigrate($mixedDb, '0003_compaction');
         $mixed = Database::connect($mixedDb);
-        self::assertSame(['0004_record_state', '0005_concurrent_pushes', '0006_compacted_op_hash'], (new Migrator($mixed))->migrateToLatest());
+        self::assertSame(['0004_record_state', '0005_concurrent_pushes', '0006_compacted_op_hash', '0007_pending_scope_delta'], (new Migrator($mixed))->migrateToLatest());
         self::tsMigrate($mixedDb);
 
         self::assertSame(self::schemaSignature($ts), self::schemaSignature($php));

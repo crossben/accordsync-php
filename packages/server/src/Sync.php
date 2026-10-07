@@ -74,6 +74,12 @@ final class Sync
         foreach ($raw as $input) {
             try {
                 $op = Wire::decode($input);
+                // PostgreSQL cannot store a lone surrogate (jsonb refuses it, text replaces it): refuse
+                // the op instead of failing the whole push.
+                $bad = self::lonePath($input);
+                if ($bad !== null) {
+                    throw new \UnexpectedValueException("lone surrogate in $bad");
+                }
             } catch (\Throwable $e) {
                 $opId = $input instanceof JsonObject ? $input->get('op_id') : null;
                 if (!\is_string($opId)) {
@@ -311,13 +317,20 @@ final class Sync
     private function pullOnce(Caller $caller, int $cursor, int $limit, array $read): array
     {
         $db = $this->db;
-        $device = $db->one('select to_json(read_keys) as read_keys, needs_resync, max_op_seq from devices where device_id = ?', [$caller->deviceId])
+        $device = $db->one('select to_json(read_keys) as read_keys, needs_resync, max_op_seq, to_json(delta_keys) as delta_keys, delta_cursor from devices where device_id = ?', [$caller->deviceId])
             ?? throw new \RuntimeException('no result');
         if ($cursor > 0 && self::bool($device['needs_resync'])) {
             return ['resync_required' => true];
         }
         // Read scopes changed (new claims): send what entered and what left, instead of everything.
-        $before = Database::stringList($device['read_keys']) ?? [];
+        // A delta stays pending until the device pulls from a cursor above the one it was sent from
+        // (it then has the answer). A pull at or below that cursor is a retry of a lost answer: the
+        // delta is computed again from the keys the device had before it (ADR-0011, 2026-10-07).
+        $pendingKeys = Database::stringList($device['delta_keys']);
+        $pendingCursor = $device['delta_cursor'] === null ? null : Database::int($device['delta_cursor']);
+        $pending = $pendingKeys !== null && $pendingCursor !== null;
+        $retry = $cursor > 0 && $pending && $cursor <= $pendingCursor;
+        $before = $retry ? $pendingKeys : (Database::stringList($device['read_keys']) ?? []);
         $keysChanged = $cursor > 0 && !self::sameKeys($before, $read);
         $delta = null;
         if ($keysChanged) {
@@ -325,11 +338,20 @@ final class Sync
             if ($delta === null) {
                 return ['resync_required' => true];
             }
-            $db->run('update devices set read_keys = ?::text[] where device_id = ?', [Database::textArray($read), $caller->deviceId]);
         }
         // The device has applied everything up to `cursor`: compaction may fold ops below it.
         if ($cursor === 0) {
-            $db->run("update devices set read_keys = ?::text[], needs_resync = false, cursor = '0' where device_id = ?", [Database::textArray($read), $caller->deviceId]);
+            $db->run("update devices set read_keys = ?::text[], needs_resync = false, cursor = '0', delta_keys = null, delta_cursor = null where device_id = ?", [Database::textArray($read), $caller->deviceId]);
+        } elseif ($keysChanged) {
+            $db->run(
+                'update devices set cursor = greatest(cursor, ?::bigint), read_keys = ?::text[], delta_keys = ?::text[], delta_cursor = ?::bigint where device_id = ?',
+                [$cursor, Database::textArray($read), Database::textArray($before), $retry ? $pendingCursor : $cursor, $caller->deviceId],
+            );
+        } elseif ($pending) {
+            $db->run(
+                'update devices set cursor = greatest(cursor, ?::bigint), read_keys = ?::text[], delta_keys = null, delta_cursor = null where device_id = ?',
+                [$cursor, Database::textArray($read), $caller->deviceId],
+            );
         } else {
             $db->run('update devices set cursor = greatest(cursor, ?::bigint) where device_id = ?', [$cursor, $caller->deviceId]);
         }
@@ -511,6 +533,54 @@ final class Sync
     private static function overlaps(array $a, array $b): bool
     {
         return array_intersect($a, $b) !== [];
+    }
+
+    /**
+     * Where a lone surrogate hides in a JSON value (a key or a string), or null if nowhere. Strings
+     * from the core's parser are WTF-8 (ADR-P04): a lone surrogate is the 3-byte sequence
+     * ED A0..BF xx, which valid UTF-8 never contains. Keys are visited in JavaScript's
+     * `Object.entries` order (array-index keys first, ascending), so the path matches the TypeScript
+     * server's.
+     */
+    public static function lonePath(mixed $value, string $path = 'op'): ?string
+    {
+        if (\is_string($value)) {
+            return self::lone($value) ? $path : null;
+        }
+        if (\is_array($value)) {
+            foreach (array_values($value) as $i => $v) {
+                $found = self::lonePath($v, "{$path}[$i]");
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        } elseif ($value instanceof JsonObject) {
+            $keys = $value->keys();
+            $index = array_values(array_filter($keys, self::isArrayIndex(...)));
+            usort($index, static fn(string $a, string $b): int => (int) $a <=> (int) $b);
+            foreach ([...$index, ...array_values(array_filter($keys, static fn(string $k): bool => !self::isArrayIndex($k)))] as $k) {
+                if (self::lone($k)) {
+                    return "$path (a key)";
+                }
+                $found = self::lonePath($value->get($k), "$path.$k");
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function lone(string $s): bool
+    {
+        return preg_match('/\xED[\xA0-\xBF]/', $s) === 1;
+    }
+
+    /** A canonical array index, as JavaScript orders object keys: "0" … "4294967294". */
+    private static function isArrayIndex(string $k): bool
+    {
+        return preg_match('/^(0|[1-9][0-9]{0,9})$/', $k) === 1 && (int) $k < 4294967295;
     }
 
     /**

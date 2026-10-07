@@ -10,8 +10,18 @@
   `contract/conformance/profile.json` (`examples/shared/ConformanceProfile.php`, shared by both).
 - Each app is served by `serve.sh`: `accord:migrate`, then `php -S` on `public/index.php` with
   `PHP_CLI_SERVER_WORKERS=16` for the sync API, and a second `php -S` process with
-  `ACCORD_CONTROL_ENABLED` set for the control API (token, reset, compact, age-device). The control
-  routes exist only in that process, never on the sync port. Laravel: 8845/8846, Symfony: 8847/8848.
+  `ACCORD_CONTROL_ENABLED` set for the control API (token, reset, compact, age-device, hold-record, held, release). The
+  control routes exist only in that process, never on the sync port. Laravel: 8845/8846, Symfony:
+  8847/8848.
+- `/hold-record` (the pull-horizon test, PROFILE.md) keeps a transaction open across requests, but
+  `php -S` workers are separate processes, so no worker can own it. `examples/shared/RecordHold.php`
+  (also used by `tools/conformance/control.php`) starts a detached helper process
+  (`examples/shared/hold-record.php`, via `setsid`) with its own connection to the same database
+  (the app passes its database URL): it runs `begin; select … for update`, writes its backend pid
+  to a state file and waits on a Unix socket. `/held` reads that pid; `/release` and `/reset`, from
+  any worker, ask the helper over the socket to roll back and wait for its answer. The state lives
+  in the system temp directory under a hash of the database URL; a flock serialises hold and
+  release; the helper rolls back by itself after an hour without a release.
 - Laravel uses its `pgsql` connection and the `file` cache store; Symfony uses Doctrine DBAL
   (`pdo_pgsql`), `cache.app` (filesystem) and the framework lock (`LOCK_DSN=flock`). Both
   connections are persistent.

@@ -9,6 +9,7 @@ declare(strict_types=1);
  *   ACCORD_DATABASE_URL=postgres://… php -S 127.0.0.1:8802 tools/conformance/control.php
  */
 
+use Accord\Examples\RecordHold;
 use Accord\Server\AccordServer;
 use Accord\Server\RateLimit\RateLimiter;
 use Accord\Server\ServerDefinition;
@@ -17,6 +18,8 @@ use Firebase\JWT\JWT;
 /** @var array{0: ServerDefinition, 1: Closure(): PDO, 2: RateLimiter} $boot */
 $boot = require __DIR__ . '/bootstrap.php';
 [$definition, $connect, $rateLimiter] = $boot;
+// The held transaction of /hold-record lives in a helper process (see RecordHold).
+require_once __DIR__ . '/../../examples/shared/RecordHold.php';
 
 final class ControlError extends RuntimeException {}
 
@@ -62,7 +65,9 @@ function accord_control(string $method, string $path, string $query, ServerDefin
     }
     /** @var PDO $pdo */
     $pdo = $connect();
+    $hold = new RecordHold((string) getenv('ACCORD_DATABASE_URL'));
     if ($method === 'POST' && $path === '/reset') {
+        $hold->release();
         $pdo->exec('truncate feed, records, devices, compacted_ops restart identity');
         $rateLimiter->clear();
 
@@ -82,6 +87,26 @@ function accord_control(string $method, string $path, string $query, ServerDefin
         if ($st->rowCount() === 0) {
             throw new ControlError('unknown device', 404);
         }
+
+        return new stdClass();
+    }
+    if ($method === 'POST' && $path === '/hold-record') {
+        $record = $q['record'][0] ?? '';
+        if ($record === '') {
+            throw new ControlError('record is required', 400);
+        }
+        [$status, $body] = $hold->hold($record);
+        if ($status !== 200) {
+            throw new ControlError(\is_array($body) && \is_string($body['error'] ?? null) ? $body['error'] : 'hold failed', $status);
+        }
+
+        return $body;
+    }
+    if ($method === 'GET' && $path === '/held') {
+        return ['waiting' => $hold->waiting($pdo)];
+    }
+    if ($method === 'POST' && $path === '/release') {
+        $hold->release();
 
         return new stdClass();
     }

@@ -6,3 +6,5 @@ parameters:
         - packages/laravel/src
         - packages/symfony/src
         - tools
+        - examples/shared/RecordHold.php
+        - examples/shared/hold-record.php

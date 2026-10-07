@@ -12,7 +12,7 @@ ACCORD_FLEET_SEEDS=1,2,3,4,5,6,7,8,9,10 ACCORD_APP_DIR=… php/interop/run.sh
 Needs Docker (unless `ACCORD_DATABASE_URL` is set), `psql`, `ss`, PHP 8.3+ with `pdo_pgsql` and
 `composer install` done in `php/`, Node 22+ and the Accord workspace (`ACCORD_APP_DIR`, the `app/`
 directory of crossben/accordsync, after `pnpm install`). The workspace sources are used, not npm:
-they carry migration 0006 and fixes not yet released.
+they carry migrations 0006 and 0007 and fixes not yet released.
 
 ## What one seed does
 
@@ -58,16 +58,15 @@ they carry migration 0006 and fixes not yet released.
 
 `ACCORD_FLEET_DEBUG=1` records each step, op and loss; the trace is printed when snapshots differ.
 
-## Known server bug (TS and PHP): a lost scope-delta response is never resent
+## Scope changes on a lossy network (fixed bug)
 
-Both servers commit a device's new `read_keys` in the same transaction as the pull that carries the
-scope delta (entering history, exits). If that response is lost, the retried pull sees no change,
-so the device never receives the history of the record that entered (or the exit).
-`ACCORD_FLEET_LOSSY_SCOPES=1` keeps the network lossy across scope changes and reproduces it (seeds
-1 and 10 diverged on `dossier:4` in one 10-seed run; timing dependent). It was first seen with every
-request sent to the TypeScript server, so it is not a PHP port bug. Until the protocol is fixed (the delta has to stay pending until a
-later pull acknowledges it), the fleet pulls scope changes on a healed network (`retoken()`); the
-deltas are still served by both servers at random.
+Scope changes (steps 60, 130, 160) happen while the network loses requests and responses. Both
+servers used to commit a device's new `read_keys` in the same transaction as the pull that carried
+the scope delta, so a lost answer lost the delta for good (seeds 1 and 10 diverged on `dossier:4` in
+one 10-seed run). The delta now stays pending until the device pulls from a later cursor (ADR-0011,
+update of 2026-10-07; migration `0007_pending_scope_delta`), on both servers. The fleet used to work
+around it by pulling scope changes on a healed network (`ACCORD_FLEET_LOSSY_SCOPES=1` reproduced
+it); that workaround is gone.
 
 ## Why a plain Node script, not vitest or PHPUnit
 
@@ -84,9 +83,10 @@ deltas are still served by both servers at random.
 
 | Planted in `packages/server/src` | Fleet (10 seeds) | Conformance suite |
 | --- | --- | --- |
-| Pull horizon = `max(pos) + 1` instead of `accord_horizon()` | caught (needs concurrent syncs; 1 of 10 seeds) | **not caught** (63 passed) |
+| Pull horizon = `max(pos) + 1` instead of `accord_horizon()` | caught (needs concurrent syncs; 1 of 10 seeds) | caught (4–5 of 68 fail, 3 runs of 3; the `/hold-record` horizon test added 2026-10-07) |
 | Push locks record rows without `for update` | caught (1 of 10 seeds) | caught (2 concurrency tests) |
 | No `scope` feed row before the op that changes scopes | caught (seed 2) | caught (7 tests) |
 | Compaction stores `sha1` instead of `Sync::opHash` | caught ("op id already used" refusal of the retired device's retry) | caught (1 test) |
+| Pull saves the new `read_keys` without `delta_keys`/`delta_cursor` (lost scope delta) | caught (seed 3 of 10: snapshots differ; the TypeScript server serves the other half of the pulls) | caught (3 tests) |
 
 The concurrency mutants are timing dependent: CI runs 10 seeds.

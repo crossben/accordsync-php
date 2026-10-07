@@ -22,6 +22,7 @@ final class Migrator
         '0004_record_state',
         '0005_concurrent_pushes',
         '0006_compacted_op_hash',
+        '0007_pending_scope_delta',
     ];
 
     public function __construct(private readonly \PDO $pdo)
@@ -209,6 +210,11 @@ final class Migrator
                 break;
             case '0006_compacted_op_hash':
                 $exec('alter table "compacted_ops" add column "op_hash" text');
+                break;
+            case '0007_pending_scope_delta':
+                // A scope delta stays pending until the device shows it received it (ADR-0011, update
+                // of 2026-10-07): the read keys before it, and the cursor it was pulled from.
+                $exec('alter table devices add column delta_keys text[], add column delta_cursor bigint');
                 break;
         }
     }

@@ -141,16 +141,12 @@ async function settle() {
   // later devices move the feed past earlier devices again.
   for (let round = 0; round < 3; round++) for (const d of devices) await d.client.sync();
 }
-// Both servers commit a scope delta (entering history, exits) when they answer the pull that
-// carries it: if that response is lost, the next pull sees no change and the device never gets
-// it (README "Known server bug"). Until that is fixed, scope changes are pulled on a healed
-// network; ACCORD_FLEET_LOSSY_SCOPES=1 keeps the network broken and reproduces the bug.
+// Scope changes happen on the lossy network: a lost answer carrying a scope delta (entering
+// history, exits) is sent again by the retry, because the delta stays pending until the device
+// pulls from a later cursor (ADR-0011, update of 2026-10-07; migration 0007_pending_scope_delta).
 async function retoken(zones: string[]) {
   tokens.awa = await token('awa', zones);
   awaHasThies = zones.includes('thies');
-  if (process.env.ACCORD_FLEET_LOSSY_SCOPES) return;
-  await settle();
-  setLoss(0.25);
 }
 
 await devices[0].client.assign(shared[0], 'zone', 'dakar');

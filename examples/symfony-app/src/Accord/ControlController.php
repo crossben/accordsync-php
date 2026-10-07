@@ -19,9 +19,13 @@ final class ControlController
         private readonly Accord $accord,
         #[Autowire(env: 'bool:default::ACCORD_CONTROL_ENABLED')]
         private readonly ?bool $enabled,
+        #[Autowire(env: 'default::ACCORD_DATABASE_URL')]
+        private readonly ?string $accordDatabaseUrl,
+        #[Autowire(env: 'default::DATABASE_URL')]
+        private readonly ?string $databaseUrl,
     ) {}
 
-    #[Route('/{action}', requirements: ['action' => 'token|reset|compact|age-device'], methods: ['GET', 'POST'], stateless: true)]
+    #[Route('/{action}', requirements: ['action' => 'token|reset|compact|age-device|hold-record|held|release'], methods: ['GET', 'POST'], stateless: true)]
     public function __invoke(Request $request, string $action): JsonResponse
     {
         if ($this->enabled !== true) {
@@ -35,6 +39,8 @@ final class ControlController
             $this->accord->pdo(...),
             $this->accord->rateLimiter(),
             $this->accord->compact(...),
+            // The connection of /hold-record: the database Accord uses (its own URL, else Doctrine's).
+            $this->accordDatabaseUrl !== null && $this->accordDatabaseUrl !== '' ? $this->accordDatabaseUrl : (string) $this->databaseUrl,
         );
 
         return new JsonResponse($body, $status);

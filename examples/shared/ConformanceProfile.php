@@ -91,11 +91,13 @@ final class ConformanceProfile
      *
      * @param array<string, list<string>> $query repeated parameters kept
      * @param \Closure(): \PDO $pdo
+     * @param string $databaseUrl the same database, for the connection of `/hold-record` (RecordHold)
      *
      * @return array{0: int, 1: array<string, mixed>|\stdClass}
      */
-    public function control(string $method, string $path, array $query, \Closure $pdo, RateLimiter $rateLimiter, \Closure $compact): array
+    public function control(string $method, string $path, array $query, \Closure $pdo, RateLimiter $rateLimiter, \Closure $compact, string $databaseUrl): array
     {
+        $hold = new RecordHold($databaseUrl);
         $path = '/' . ltrim($path, '/');
         if ($method === 'GET' && $path === '/token') {
             $sub = $query['sub'][0] ?? '';
@@ -116,6 +118,7 @@ final class ConformanceProfile
             return [200, ['token' => JWT::encode($claims, self::str($auth['hs256Secret']), 'HS256')]];
         }
         if ($method === 'POST' && $path === '/reset') {
+            $hold->release();
             $pdo()->exec('truncate feed, records, devices, compacted_ops restart identity');
             $rateLimiter->clear();
 
@@ -137,6 +140,20 @@ final class ConformanceProfile
             $st->execute([(int) $days, $device]);
 
             return $st->rowCount() === 0 ? [404, ['error' => 'unknown device']] : [200, new \stdClass()];
+        }
+
+        if ($method === 'POST' && $path === '/hold-record') {
+            $record = $query['record'][0] ?? '';
+
+            return $record === '' ? [400, ['error' => 'record is required']] : $hold->hold($record);
+        }
+        if ($method === 'GET' && $path === '/held') {
+            return [200, ['waiting' => $hold->waiting($pdo())]];
+        }
+        if ($method === 'POST' && $path === '/release') {
+            $hold->release();
+
+            return [200, new \stdClass()];
         }
 
         return [404, ['error' => 'not found']];

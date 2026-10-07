@@ -15,7 +15,7 @@ final class AppServiceProvider extends ServiceProvider
         // The conformance control API. The route always exists (so routes can be cached); it answers
         // only in a process started with ACCORD_CONTROL_ENABLED=true (serve.sh's control server).
         if (!$this->app->routesAreCached()) {
-            Route::match(['GET', 'POST'], '/{action}', ControlController::class)->where('action', 'token|reset|compact|age-device');
+            Route::match(['GET', 'POST'], '/{action}', ControlController::class)->where('action', 'token|reset|compact|age-device|hold-record|held|release');
         }
     }
 }

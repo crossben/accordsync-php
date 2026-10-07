@@ -64,7 +64,7 @@ for seed in "${seeds[@]}"; do
   # Migrate once with one implementation; the other must then have nothing to do.
   if (( seed % 2 == 0 )); then first=ts; ts_migrate "$dburl"; else first=php; php_migrate "$dburl" >/dev/null; fi
   before="$(ledger "$dburl")"
-  [[ $(wc -l <<< "$before") -ge 6 ]] || { echo "seed $seed: $first migrated only: $before" >&2; exit 1; }
+  [[ $(wc -l <<< "$before") -ge 7 ]] || { echo "seed $seed: $first migrated only: $before" >&2; exit 1; }
   if [[ $first == ts ]]; then
     out="$(php_migrate "$dburl")"
     [[ "$out" == *"up to date"* ]] || { echo "seed $seed: PHP migrated after TS: $out" >&2; exit 1; }
