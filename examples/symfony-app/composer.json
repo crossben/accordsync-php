@@ -7,7 +7,7 @@
         "php": ">=8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "accordsync/symfony": "^0.2",
+        "accordsync/symfony": "^0.3",
         "doctrine/doctrine-bundle": "*",
         "symfony/console": "7.4.*",
         "symfony/dotenv": "7.4.*",
@@ -70,10 +70,10 @@
             "options": {
                 "symlink": true,
                 "versions": {
-                    "accordsync/core": "0.2.0",
-                    "accordsync/server": "0.2.0",
-                    "accordsync/laravel": "0.2.0",
-                    "accordsync/symfony": "0.2.0"
+                    "accordsync/core": "0.3.0",
+                    "accordsync/server": "0.3.0",
+                    "accordsync/laravel": "0.3.0",
+                    "accordsync/symfony": "0.3.0"
                 }
             }
         }

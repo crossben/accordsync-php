@@ -10,20 +10,20 @@
             "options": {
                 "symlink": true,
                 "versions": {
-                    "accordsync/core": "0.2.0",
-                    "accordsync/server": "0.2.0",
-                    "accordsync/laravel": "0.2.0",
-                    "accordsync/symfony": "0.2.0"
+                    "accordsync/core": "0.3.0",
+                    "accordsync/server": "0.3.0",
+                    "accordsync/laravel": "0.3.0",
+                    "accordsync/symfony": "0.3.0"
                 }
             }
         }
     ],
     "require": {
         "php": ">=8.3",
-        "accordsync/core": "^0.2",
-        "accordsync/server": "^0.2",
-        "accordsync/laravel": "^0.2",
-        "accordsync/symfony": "^0.2"
+        "accordsync/core": "^0.3",
+        "accordsync/server": "^0.3",
+        "accordsync/laravel": "^0.3",
+        "accordsync/symfony": "^0.3"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.75",

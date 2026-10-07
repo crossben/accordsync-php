@@ -2,13 +2,13 @@
 
 The [Accord](https://accord.benhattab.pro) sync server inside a Symfony app: a bundle, the `accord:`
 configuration, a route loader, `bin/console accord:migrate` / `accord:compact`, and the Doctrine DBAL
-connection. All sync behaviour comes from [`accordsync/server`](../server); this bundle only wires it
+connection. All sync behaviour comes from [`accordsync/server`](https://packagist.org/packages/accordsync/server); this bundle only wires it
 in. Symfony 7.2+ (tested with 7.4), PHP 8.3+, PostgreSQL.
 
 ## Install
 
 ```sh
-composer require accordsync/symfony symfony/lock
+composer require accordsync/symfony
 ```
 
 Flex registers `Accord\Symfony\AccordBundle` (otherwise add it to `config/bundles.php`). Import the
@@ -105,5 +105,5 @@ conflict. The bundle does not register a Symfony Scheduler task.
   on several, use a Redis pool and a shared lock store (`lock_factory: lock.factory` with a Redis or
   PostgreSQL `LOCK_DSN`).
 
-The tested setup is [`examples/symfony-app`](../../examples/symfony-app), which passes the Accord
-server conformance suite (see `docs/adr/0010-example-apps-and-serving.md`).
+The tested setup is [`examples/symfony-app`](https://github.com/crossben/accordsync-php/tree/main/examples/symfony-app), which passes the Accord
+server conformance suite (68 tests) in CI; see `docs/adr/0010-example-apps-and-serving.md`.

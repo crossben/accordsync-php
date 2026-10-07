@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0b4d21e26530bc9b8d81909260867e3b",
+    "content-hash": "a169863f106c102b16a43220fe853439",
     "packages": [
         {
             "name": "accordsync/core",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "f90ebb23efcf8df403aeb094cd2b950cf1270d80"
+                "reference": "2a048364a1959ac6a7ee322958c9de1091d41695"
             },
             "require": {
                 "ext-json": "*",
@@ -48,14 +48,14 @@
         },
         {
             "name": "accordsync/laravel",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "dist": {
                 "type": "path",
                 "url": "packages/laravel",
-                "reference": "b2d9296ed143f317d7919b2f881d379d03010ff2"
+                "reference": "9f4215e589450b2721df91714f43e71fb0cb197a"
             },
             "require": {
-                "accordsync/server": "^0.2",
+                "accordsync/server": "^0.3",
                 "illuminate/cache": "^11.0 || ^12.0 || ^13.0",
                 "illuminate/console": "^11.0 || ^12.0 || ^13.0",
                 "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
@@ -102,14 +102,14 @@
         },
         {
             "name": "accordsync/server",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "dist": {
                 "type": "path",
                 "url": "packages/server",
-                "reference": "4dafdd44c2055bda66b24e022d8835920035b0f2"
+                "reference": "ac631e53a7c4f89db7471939f059a6acaf4498c7"
             },
             "require": {
-                "accordsync/core": "^0.2",
+                "accordsync/core": "^0.3",
                 "ext-pdo_pgsql": "*",
                 "firebase/php-jwt": "^7.2",
                 "php": ">=8.3",
@@ -150,14 +150,14 @@
         },
         {
             "name": "accordsync/symfony",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "dist": {
                 "type": "path",
                 "url": "packages/symfony",
-                "reference": "fcd102dfe46398e2e9f2f12ca3b57f04292a668c"
+                "reference": "452be4ad6641f218bcd65e28c0c04d821b380548"
             },
             "require": {
-                "accordsync/server": "^0.2",
+                "accordsync/server": "^0.3",
                 "nyholm/psr7": "^1.8",
                 "php": ">=8.3",
                 "psr/cache": "^2.0 || ^3.0",
@@ -171,7 +171,7 @@
                 "symfony/lock": "^7.2 || ^8.0",
                 "symfony/routing": "^7.2 || ^8.0"
             },
-            "type": "library",
+            "type": "symfony-bundle",
             "autoload": {
                 "psr-4": {
                     "Accord\\Symfony\\": "src/"

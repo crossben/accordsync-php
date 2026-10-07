@@ -1,0 +1,53 @@
+name: release
+
+# Push a tag like v0.3.0 to release the four packages. Packagist reads one package per repository,
+# so each packages/<name> directory is split (with its history) into its own read-only repository,
+# crossben/accordsync-php-<name>, and tagged there. Packagist picks the tags up from those
+# repositories (ADR-P01).
+#
+# Needs the secret SPLIT_TOKEN: a fine-grained token with Contents: read and write on the four
+# accordsync-php-* repositories.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql
+      - name: Check the tag matches the package versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          v=$(php -r '$c=json_decode(file_get_contents("composer.json"),true);echo $c["repositories"][0]["options"]["versions"]["accordsync/core"];')
+          [ "$v" = "$tag" ] || { echo "packages are $v, tag is $tag"; exit 1; }
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/phpstan analyse --no-progress && vendor/bin/phpunit
+
+  split:
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [core, server, laravel, symfony]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Split packages/${{ matrix.package }} and push it with the tag
+        env:
+          TOKEN: ${{ secrets.SPLIT_TOKEN }}
+        run: |
+          git config user.name "accordsync release"
+          git config user.email "release@accord.benhattab.pro"
+          sha=$(git subtree split --prefix "packages/${{ matrix.package }}")
+          remote="https://x-access-token:${TOKEN}@github.com/crossben/accordsync-php-${{ matrix.package }}.git"
+          git push "$remote" "$sha:refs/heads/main" --force
+          git push "$remote" "$sha:refs/tags/${GITHUB_REF_NAME}"

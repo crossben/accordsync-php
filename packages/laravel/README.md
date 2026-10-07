@@ -2,7 +2,7 @@
 
 The [Accord](https://accord.benhattab.pro) sync server inside a Laravel app: a service provider,
 `config/accord.php`, the sync routes, `php artisan accord:migrate` / `accord:compact`, and compaction
-in the scheduler. All sync behaviour comes from [`accordsync/server`](../server); this package only
+in the scheduler. All sync behaviour comes from [`accordsync/server`](https://packagist.org/packages/accordsync/server); this package only
 wires it in. Laravel 11+ (tested with 13), PHP 8.3+, PostgreSQL.
 
 ## Install
@@ -97,5 +97,5 @@ takes PostgreSQL's exclusive advisory lock, so two servers compacting at once do
 - Request bodies above the definition's `maxBodyBytes` get 413 from the handler; PHP's own
   `post_max_size` still applies before it.
 
-The tested setup is [`examples/laravel-app`](../../examples/laravel-app), which passes the Accord
-server conformance suite (see `docs/adr/0010-example-apps-and-serving.md`).
+The tested setup is [`examples/laravel-app`](https://github.com/crossben/accordsync-php/tree/main/examples/laravel-app), which passes the Accord
+server conformance suite (68 tests) in CI; see `docs/adr/0010-example-apps-and-serving.md`.
