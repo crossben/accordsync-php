@@ -79,7 +79,7 @@ for seed in "${seeds[@]}"; do
   ACCORD_DATABASE_URL="$dburl" ACCORD_RATE_FILE="$rate" PHP_CLI_SERVER_WORKERS=8 \
     php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -S "127.0.0.1:$php_port" "$php_root/tools/conformance/server.php" >"$logs/php-$seed.log" 2>&1 &
   ACCORD_DATABASE_URL="$dburl" ACCORD_RATE_FILE="$rate" \
-    php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -S "127.0.0.1:$php_control" "$php_root/tools/conformance/control.php" >"$logs/php-control-$seed.log" 2>&1 &
+    php -q "$php_root/tools/conformance/control-server.php" "$php_control" >"$logs/php-control-$seed.log" 2>&1 &
   wait_up "http://127.0.0.1:$ts_port"; wait_up "http://127.0.0.1:$php_port"
   [[ "$(ledger "$dburl")" == "$before" ]] || { echo "seed $seed: server start changed the ledger" >&2; exit 1; }
 

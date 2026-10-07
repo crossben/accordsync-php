@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Migrates ACCORD_DATABASE_URL, then serves the conformance profile on ACCORD_PORT (default 8801) and
-# the control API on ACCORD_CONTROL_PORT (default 8802) with PHP's built-in server. Ctrl-C stops both.
+# the control API on ACCORD_CONTROL_PORT (default 8802) as a plain CLI process (control-server.php). Ctrl-C stops both.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 : "${ACCORD_DATABASE_URL:?ACCORD_DATABASE_URL is required}"
@@ -11,7 +11,8 @@ php "$here/migrate.php"
 # php -S is single-threaded unless PHP_CLI_SERVER_WORKERS is set (Linux): the concurrency tests need it.
 PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-8}" php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" "$here/server.php" &
 sync_pid=$!
-php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" "$here/control.php" &
+# The control API runs as a plain CLI process, not under php -S (see control-server.php).
+php -q ${ACCORD_PHP_FLAGS:-} "$here/control-server.php" "$control_port" &
 control_pid=$!
 trap 'kill $sync_pid $control_pid 2>/dev/null || true' EXIT INT TERM
 wait -n $sync_pid $control_pid
