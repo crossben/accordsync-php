@@ -41,6 +41,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Otherwise checkout leaves GITHUB_TOKEN in git's config, which wins over SPLIT_TOKEN in
+          # the push URL and cannot write to the split repositories (403 for github-actions[bot]).
+          persist-credentials: false
       - name: Split packages/${{ matrix.package }} and push it with the tag
         env:
           TOKEN: ${{ secrets.SPLIT_TOKEN }}
