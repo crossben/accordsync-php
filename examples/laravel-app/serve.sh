@@ -14,10 +14,10 @@ php artisan optimize:clear -q
 php artisan config:cache -q && php artisan route:cache -q && php artisan event:cache -q
 php artisan accord:migrate
 PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-16}" ACCORD_CONTROL_ENABLED=false \
-  php -q -d opcache.enable_cli=1 -d opcache.validate_timestamps=0 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" -t public public/index.php &
+  php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -d opcache.validate_timestamps=0 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" -t public public/index.php &
 sync_pid=$!
-PHP_CLI_SERVER_WORKERS=2 ACCORD_CONTROL_ENABLED=true \
-  php -q -d opcache.enable_cli=1 -d opcache.validate_timestamps=0 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" -t public public/index.php &
+ACCORD_CONTROL_ENABLED=true \
+  php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -d opcache.validate_timestamps=0 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" -t public public/index.php &
 control_pid=$!
 trap 'kill $sync_pid $control_pid 2>/dev/null || true' EXIT INT TERM
 wait -n $sync_pid $control_pid

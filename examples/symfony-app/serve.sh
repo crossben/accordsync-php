@@ -10,10 +10,10 @@ control_port="${ACCORD_CONTROL_PORT:-8848}"
 php bin/console cache:clear --no-warmup -q && php bin/console cache:warmup -q
 php bin/console accord:migrate
 env -u ACCORD_CONTROL_ENABLED PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-16}" \
-  php -q -d opcache.enable_cli=1 -d opcache.validate_timestamps=0 -d variables_order=EGPCS ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" -t public public/index.php &
+  php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -d opcache.validate_timestamps=0 -d variables_order=EGPCS ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" -t public public/index.php &
 sync_pid=$!
-PHP_CLI_SERVER_WORKERS=2 ACCORD_CONTROL_ENABLED=1 \
-  php -q -d opcache.enable_cli=1 -d opcache.validate_timestamps=0 -d variables_order=EGPCS ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" -t public public/index.php &
+ACCORD_CONTROL_ENABLED=1 \
+  php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -d opcache.validate_timestamps=0 -d variables_order=EGPCS ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" -t public public/index.php &
 control_pid=$!
 trap 'kill $sync_pid $control_pid 2>/dev/null || true' EXIT INT TERM
 wait -n $sync_pid $control_pid
