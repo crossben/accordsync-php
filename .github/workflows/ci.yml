@@ -78,7 +78,7 @@ jobs:
           path: accord-src
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'  # PHP 8.3.35's engine segfaults reading static properties on the runner
           # Only what Accord, Composer, Laravel and Symfony use. The runner's PHP enables many more
           # (redis, memcached, amqp, zmq, ...); with them loaded, the forking `php -S` servers
           # segfaulted in CI while passing everywhere else.
@@ -88,9 +88,9 @@ jobs:
         run: php -m
       - name: PHP-FPM and nginx
         run: |
-          command -v php-fpm8.3 >/dev/null || ls /usr/sbin/php-fpm8.3 >/dev/null 2>&1 || sudo apt-get install -y -qq php8.3-fpm
+          command -v php-fpm8.4 >/dev/null || ls /usr/sbin/php-fpm8.4 >/dev/null 2>&1 || sudo apt-get install -y -qq php8.4-fpm
           command -v nginx >/dev/null || ls /usr/sbin/nginx >/dev/null 2>&1 || sudo apt-get install -y -qq nginx
-          /usr/sbin/php-fpm8.3 -m | tr '\n' ' '; echo; /usr/sbin/nginx -v
+          /usr/sbin/php-fpm8.4 -m | tr '\n' ' '; echo; /usr/sbin/nginx -v
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: accord-src/package.json
@@ -153,7 +153,7 @@ jobs:
           path: accord-src
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'  # PHP 8.3.35's engine segfaults reading static properties on the runner
           # Only what Accord, Composer, Laravel and Symfony use. The runner's PHP enables many more
           # (redis, memcached, amqp, zmq, ...); with them loaded, the forking `php -S` servers
           # segfaulted in CI while passing everywhere else.
@@ -163,9 +163,9 @@ jobs:
         run: php -m
       - name: PHP-FPM and nginx
         run: |
-          command -v php-fpm8.3 >/dev/null || ls /usr/sbin/php-fpm8.3 >/dev/null 2>&1 || sudo apt-get install -y -qq php8.3-fpm
+          command -v php-fpm8.4 >/dev/null || ls /usr/sbin/php-fpm8.4 >/dev/null 2>&1 || sudo apt-get install -y -qq php8.4-fpm
           command -v nginx >/dev/null || ls /usr/sbin/nginx >/dev/null 2>&1 || sudo apt-get install -y -qq nginx
-          /usr/sbin/php-fpm8.3 -m | tr '\n' ' '; echo; /usr/sbin/nginx -v
+          /usr/sbin/php-fpm8.4 -m | tr '\n' ' '; echo; /usr/sbin/nginx -v
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: accord-src/package.json
@@ -217,7 +217,7 @@ jobs:
           path: accord-src
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'  # PHP 8.3.35's engine segfaults reading static properties on the runner
           # Only what Accord, Composer, Laravel and Symfony use. The runner's PHP enables many more
           # (redis, memcached, amqp, zmq, ...); with them loaded, the forking `php -S` servers
           # segfaulted in CI while passing everywhere else.
@@ -227,9 +227,9 @@ jobs:
         run: php -m
       - name: PHP-FPM and nginx
         run: |
-          command -v php-fpm8.3 >/dev/null || ls /usr/sbin/php-fpm8.3 >/dev/null 2>&1 || sudo apt-get install -y -qq php8.3-fpm
+          command -v php-fpm8.4 >/dev/null || ls /usr/sbin/php-fpm8.4 >/dev/null 2>&1 || sudo apt-get install -y -qq php8.4-fpm
           command -v nginx >/dev/null || ls /usr/sbin/nginx >/dev/null 2>&1 || sudo apt-get install -y -qq nginx
-          /usr/sbin/php-fpm8.3 -m | tr '\n' ' '; echo; /usr/sbin/nginx -v
+          /usr/sbin/php-fpm8.4 -m | tr '\n' ' '; echo; /usr/sbin/nginx -v
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: accord-src/package.json

@@ -7,14 +7,15 @@
 #
 # Every request goes to FRONT_CONTROLLER (an absolute path), like `php -S host:port script.php`.
 # The environment is passed to PHP (clear_env = no), so ACCORD_DATABASE_URL etc. reach the app.
-# Needs php-fpm (php-fpm8.3 or php-fpm) and nginx on PATH or in /usr/sbin.
+# Needs the php-fpm matching the active `php` (php-fpmX.Y or php-fpm) and nginx, on PATH or in /usr/sbin.
 set -euo pipefail
 
 port="$1"
 script="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 workers="${3:-16}"
 
-fpm="$(command -v php-fpm8.3 || command -v php-fpm || ls /usr/sbin/php-fpm8.3 2>/dev/null || ls /usr/sbin/php-fpm* 2>/dev/null | head -1)"
+v="$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')"
+fpm="$(command -v "php-fpm$v" || ls "/usr/sbin/php-fpm$v" 2>/dev/null || command -v php-fpm || true)"
 nginx="$(command -v nginx || ls /usr/sbin/nginx 2>/dev/null)"
 [[ -x "$fpm" && -x "$nginx" ]] || { echo "fpm-nginx.sh: needs php-fpm and nginx" >&2; exit 1; }
 
