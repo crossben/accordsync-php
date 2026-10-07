@@ -9,9 +9,9 @@ control_port="${ACCORD_CONTROL_PORT:-8802}"
 export ACCORD_RATE_FILE="${ACCORD_RATE_FILE:-$(mktemp -t accord-rate.XXXXXX)}"
 php "$here/migrate.php"
 # php -S is single-threaded unless PHP_CLI_SERVER_WORKERS is set (Linux): the concurrency tests need it.
-PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-8}" php -q -d opcache.enable_cli=1 -S "127.0.0.1:$port" "$here/server.php" &
+PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-8}" php -q -d opcache.enable_cli=1 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" "$here/server.php" &
 sync_pid=$!
-PHP_CLI_SERVER_WORKERS=2 php -q -d opcache.enable_cli=1 -S "127.0.0.1:$control_port" "$here/control.php" &
+PHP_CLI_SERVER_WORKERS=2 php -q -d opcache.enable_cli=1 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" "$here/control.php" &
 control_pid=$!
 trap 'kill $sync_pid $control_pid 2>/dev/null || true' EXIT INT TERM
 wait -n $sync_pid $control_pid

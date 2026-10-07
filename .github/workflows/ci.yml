@@ -73,8 +73,13 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_pgsql
+          # Only what Accord, Composer, Laravel and Symfony use. The runner's PHP enables many more
+          # (redis, memcached, amqp, zmq, ...); with them loaded, the forking `php -S` servers
+          # segfaulted in CI while passing everywhere else.
+          extensions: none, ctype, curl, dom, fileinfo, filter, iconv, intl, mbstring, opcache, openssl, pdo, pdo_pgsql, phar, posix, session, simplexml, tokenizer, xml, xmlreader, xmlwriter, zip
           coverage: none
+      - name: PHP modules in use
+        run: php -m
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: accord-src/package.json
@@ -128,8 +133,13 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_pgsql
+          # Only what Accord, Composer, Laravel and Symfony use. The runner's PHP enables many more
+          # (redis, memcached, amqp, zmq, ...); with them loaded, the forking `php -S` servers
+          # segfaulted in CI while passing everywhere else.
+          extensions: none, ctype, curl, dom, fileinfo, filter, iconv, intl, mbstring, opcache, openssl, pdo, pdo_pgsql, phar, posix, session, simplexml, tokenizer, xml, xmlreader, xmlwriter, zip
           coverage: none
+      - name: PHP modules in use
+        run: php -m
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: accord-src/package.json
@@ -172,8 +182,13 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_pgsql
+          # Only what Accord, Composer, Laravel and Symfony use. The runner's PHP enables many more
+          # (redis, memcached, amqp, zmq, ...); with them loaded, the forking `php -S` servers
+          # segfaulted in CI while passing everywhere else.
+          extensions: none, ctype, curl, dom, fileinfo, filter, iconv, intl, mbstring, opcache, openssl, pdo, pdo_pgsql, phar, posix, session, simplexml, tokenizer, xml, xmlreader, xmlwriter, zip
           coverage: none
+      - name: PHP modules in use
+        run: php -m
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: accord-src/package.json
