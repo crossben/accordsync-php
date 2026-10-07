@@ -20,6 +20,9 @@ composer require accordsync/symfony    # Symfony
 composer require accordsync/server     # plain PHP or another framework (PSR-15)
 ```
 
+> **PHP 8.4 recommended.** PHP 8.3 is supported, but on GitHub's runners PHP 8.3.35 segfaulted in
+> the engine under load (ADR-P11, `docs/adr/0011-ci-php-8.4-servers.md`); the server tests run on 8.4.
+
 ## Packages
 
 | Package | What it does |
