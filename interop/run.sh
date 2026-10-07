@@ -76,8 +76,13 @@ for seed in "${seeds[@]}"; do
   (cd "$app/conformance" && ACCORD_DATABASE_URL="$dburl" ACCORD_PORT=$ts_port ACCORD_CONTROL_PORT=$ts_control \
     exec node --import tsx --conditions=@accordsync/source reference-server.ts) >"$logs/ts-$seed.log" 2>&1 &
   rate="$logs/rate-$seed.json"
-  ACCORD_DATABASE_URL="$dburl" ACCORD_RATE_FILE="$rate" PHP_CLI_SERVER_WORKERS=8 \
-    php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -S "127.0.0.1:$php_port" "$php_root/tools/conformance/server.php" >"$logs/php-$seed.log" 2>&1 &
+  if [[ "${ACCORD_SERVE:-}" == fpm ]]; then # PHP-FPM behind nginx (CI), see tools/conformance/fpm-nginx.sh
+    ACCORD_DATABASE_URL="$dburl" ACCORD_RATE_FILE="$rate" \
+      "$php_root/tools/conformance/fpm-nginx.sh" "$php_port" "$php_root/tools/conformance/server.php" 8 >"$logs/php-$seed.log" 2>&1 &
+  else
+    ACCORD_DATABASE_URL="$dburl" ACCORD_RATE_FILE="$rate" PHP_CLI_SERVER_WORKERS=8 \
+      php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -S "127.0.0.1:$php_port" "$php_root/tools/conformance/server.php" >"$logs/php-$seed.log" 2>&1 &
+  fi
   ACCORD_DATABASE_URL="$dburl" ACCORD_RATE_FILE="$rate" \
     php -q "$php_root/tools/conformance/control-server.php" "$php_control" >"$logs/php-control-$seed.log" 2>&1 &
   wait_up "http://127.0.0.1:$ts_port"; wait_up "http://127.0.0.1:$php_port"

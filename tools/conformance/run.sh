@@ -9,7 +9,12 @@ control_port="${ACCORD_CONTROL_PORT:-8802}"
 export ACCORD_RATE_FILE="${ACCORD_RATE_FILE:-$(mktemp -t accord-rate.XXXXXX)}"
 php "$here/migrate.php"
 # php -S is single-threaded unless PHP_CLI_SERVER_WORKERS is set (Linux): the concurrency tests need it.
-PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-8}" php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" "$here/server.php" &
+# ACCORD_SERVE=fpm serves through PHP-FPM behind nginx (CI); the default is PHP's built-in server.
+if [[ "${ACCORD_SERVE:-}" == fpm ]]; then
+  "$here/fpm-nginx.sh" "$port" "$here/server.php" "${PHP_CLI_SERVER_WORKERS:-8}" &
+else
+  PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-8}" php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" "$here/server.php" &
+fi
 sync_pid=$!
 # The control API runs as a plain CLI process, not under php -S (see control-server.php).
 php -q ${ACCORD_PHP_FLAGS:-} "$here/control-server.php" "$control_port" &

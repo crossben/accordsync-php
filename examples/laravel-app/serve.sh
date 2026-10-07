@@ -13,11 +13,18 @@ control_port="${ACCORD_CONTROL_PORT:-8846}"
 php artisan optimize:clear -q
 php artisan config:cache -q && php artisan route:cache -q && php artisan event:cache -q
 php artisan accord:migrate
+if [[ "${ACCORD_SERVE:-}" == fpm ]]; then # PHP-FPM behind nginx (CI), see tools/conformance/fpm-nginx.sh
+  fpm="$(cd "$PWD/../.." && pwd)/tools/conformance/fpm-nginx.sh"
+  ACCORD_CONTROL_ENABLED=false "$fpm" "$port" "$PWD/public/index.php" "${PHP_CLI_SERVER_WORKERS:-16}" &
+  sync_pid=$!
+  ACCORD_CONTROL_ENABLED=true "$fpm" "$control_port" "$PWD/public/index.php" 2 &
+else
 PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-16}" ACCORD_CONTROL_ENABLED=false \
   php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -d opcache.validate_timestamps=0 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$port" -t public public/index.php &
 sync_pid=$!
 ACCORD_CONTROL_ENABLED=true \
   php -q -d opcache.enable_cli=${ACCORD_OPCACHE:-1} -d opcache.validate_timestamps=0 ${ACCORD_PHP_FLAGS:-} -S "127.0.0.1:$control_port" -t public public/index.php &
+fi
 control_pid=$!
 trap 'kill $sync_pid $control_pid 2>/dev/null || true' EXIT INT TERM
 wait -n $sync_pid $control_pid

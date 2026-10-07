@@ -40,7 +40,7 @@ final class RecordHold
                 }
             }
             $this->cleanup();
-            $cmd = 'exec setsid ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/hold-record.php') . ' '
+            $cmd = 'exec setsid ' . escapeshellarg(self::phpCli()) . ' ' . escapeshellarg(__DIR__ . '/hold-record.php') . ' '
                 . escapeshellarg($this->dir()) . ' ' . escapeshellarg($record) . ' </dev/null >/dev/null 2>&1 &';
             $env = getenv();
             $env['ACCORD_HOLD_DATABASE_URL'] = $this->databaseUrl;
@@ -253,5 +253,16 @@ final class RecordHold
         return new \PDO($dsn, isset($p['user']) ? rawurldecode($p['user']) : null, isset($p['pass']) ? rawurldecode($p['pass']) : null, [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
         ]);
+    }
+
+    /** The PHP CLI binary: under PHP-FPM, PHP_BINARY is php-fpm, which cannot run a script. */
+    private static function phpCli(): string
+    {
+        if (\PHP_SAPI === 'cli') {
+            return PHP_BINARY;
+        }
+        $candidate = PHP_BINDIR . '/php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+
+        return is_executable($candidate) ? $candidate : (is_executable(PHP_BINDIR . '/php') ? PHP_BINDIR . '/php' : 'php');
     }
 }
