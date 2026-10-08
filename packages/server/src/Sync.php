@@ -334,7 +334,7 @@ final class Sync
         $keysChanged = $cursor > 0 && !self::sameKeys($before, $read);
         $delta = null;
         if ($keysChanged) {
-            $delta = $this->scopeDelta($before, $read, $this->def->limits->maxScopeDelta);
+            $delta = $this->scopeDelta($cursor, $before, $read, $this->def->limits->maxScopeDelta);
             if ($delta === null) {
                 return ['resync_required' => true];
             }
@@ -441,36 +441,68 @@ final class Sync
     }
 
     /**
-     * What a change of read keys means for a device: the history of every record now visible that
-     * was not visible before, and an exit for every record no longer visible at all. Null when the
-     * change touches more than `$max` records: a full resync is cheaper then.
+     * What a change of read keys means for a device at `$cursor`: the history of every record visible
+     * now (under `$after`) that it did not have, and an exit for every record it had that it may no
+     * longer see. "Had" is judged at the cursor: a record's scopes as of `$cursor` (the
+     * `scopes_before` of its first scope row above the cursor, or its current scopes if none) against
+     * the keys the device had (`$before`). The feed from the cursor is then read with the new keys, so
+     * a record that moved since the cursor is handled by its scope rows on top of this (ADR-0011,
+     * 2026-10-07 b). Extra history or a repeated exit later in the feed is harmless (ops are
+     * idempotent). Null when the change touches more than `$max` records: a full resync is cheaper.
      *
      * @param list<string> $before
      * @param list<string> $after
      *
      * @return ?array{history: list<array<string, mixed>>, exits: list<string>}
      */
-    private function scopeDelta(array $before, array $after, int $max): ?array
+    private function scopeDelta(int $cursor, array $before, array $after, int $max): ?array
     {
         $was = Database::textArray($before);
         $now = Database::textArray($after);
-        $entering = $this->db->all(
-            'select record from records where scopes && ?::text[] and not (scopes && ?::text[]) limit ?::bigint',
-            [$now, $was, $max + 1],
+        $both = Database::textArray(array_values(array_unique([...$before, ...$after])));
+        // Each record's scopes at the cursor: current scopes for records unchanged since, else the
+        // scopes before their first change above the cursor (empty for a record created since).
+        $rows = $this->db->all(
+            <<<'SQL'
+                with moved as (
+                  select distinct on (record) record, scopes_before as scopes
+                  from feed
+                  where kind = 'scope' and pos > ?::bigint
+                  order by record, pos, seq
+                ), at_cursor as (
+                  select r.record, r.scopes from records r
+                  where r.scopes && ?::text[]
+                    and not exists (select 1 from moved m where m.record = r.record)
+                  union all
+                  select m.record, m.scopes from moved m
+                )
+                select record, scopes && ?::text[] as entering from at_cursor
+                where (scopes && ?::text[]) <> (scopes && ?::text[])
+                order by record
+                limit ?::bigint
+                SQL,
+            [(string) $cursor, $both, $now, $now, $was, $max + 1],
         );
-        $leaving = $this->db->all(
-            'select record from records where scopes && ?::text[] and not (scopes && ?::text[]) limit ?::bigint',
-            [$was, $now, $max + 1],
-        );
-        if (\count($entering) + \count($leaving) > $max) {
+        if (\count($rows) > $max) {
             return null;
         }
+        $entering = [];
+        $exits = [];
+        foreach ($rows as $r) {
+            if (self::bool($r['entering'])) {
+                $entering[] = Database::str($r['record']);
+            } else {
+                $exits[] = Database::str($r['record']);
+            }
+        }
+        // History up to the cursor only: what was written since comes from the feed, read with the new
+        // keys, so a record that left the device's scope since never leaks the ops written after.
         $history = $entering === [] ? [] : $this->db->all(
-            "select kind, op from feed where record = any(?::text[]) and kind in ('op', 'snapshot') order by record, pos, seq",
-            [Database::textArray(array_map(static fn(array $r): string => Database::str($r['record']), $entering))],
+            "select kind, op from feed where record = any(?::text[]) and kind in ('op', 'snapshot') and pos <= ?::bigint order by record, pos, seq",
+            [Database::textArray($entering), (string) $cursor],
         );
 
-        return ['history' => $history, 'exits' => array_map(static fn(array $r): string => Database::str($r['record']), $leaving)];
+        return ['history' => $history, 'exits' => $exits];
     }
 
     /** A record's state on the server: its latest snapshot, then the ops after it. */

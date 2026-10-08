@@ -68,6 +68,13 @@ update of 2026-10-07; migration `0007_pending_scope_delta`), on both servers. Th
 around it by pulling scope changes on a healed network (`ACCORD_FLEET_LOSSY_SCOPES=1` reproduced
 it); that workaround is gone.
 
+The delta is judged at the device's cursor `C` (ADR-0011, update 2026-10-07 b): a record's scopes at
+`C` are the `scopes_before` of its first `scope` feed row above `C`, else its current scopes, and an
+entering record's history stops at `C` (the feed from `C` carries the rest, read with the new keys).
+Computing it from current scopes lost a record that moved into a key both key sets share (found by
+the Java fleet), and an unbounded history leaked ops written after a record left the device's scope.
+`Sync::scopeDelta` does it in one query, bounded by `maxScopeDelta + 1`, like the TypeScript server.
+
 ## Why a plain Node script, not vitest or PHPUnit
 
 - Devices are the real TypeScript client, so the runner is Node anyway; PHPUnit would add a
