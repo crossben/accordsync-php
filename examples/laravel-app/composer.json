@@ -11,10 +11,10 @@
             "options": {
                 "symlink": true,
                 "versions": {
-                    "accordsync/core": "0.3.0",
-                    "accordsync/server": "0.3.0",
-                    "accordsync/laravel": "0.3.0",
-                    "accordsync/symfony": "0.3.0"
+                    "accordsync/core": "0.3.1",
+                    "accordsync/server": "0.3.1",
+                    "accordsync/laravel": "0.3.1",
+                    "accordsync/symfony": "0.3.1"
                 }
             }
         }
