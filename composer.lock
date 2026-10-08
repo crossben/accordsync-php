@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "52859947083274852a11c29e8f64f55d",
+    "content-hash": "ab3d531b364214bfb741d9fd4e67aed1",
     "packages": [
         {
             "name": "accordsync/core",
-            "version": "0.3.1",
+            "version": "0.3.2",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "f39a27f15c1bef8f0d341b0889279e5239dcbb82"
+                "reference": "60acd7d899d8b3cb782a0644a702c30be595c7eb"
             },
             "require": {
                 "ext-json": "*",
@@ -48,11 +48,11 @@
         },
         {
             "name": "accordsync/laravel",
-            "version": "0.3.1",
+            "version": "0.3.2",
             "dist": {
                 "type": "path",
                 "url": "packages/laravel",
-                "reference": "b2d84dfa22ce1525edaf7d9a5fae7dc7464d3ebf"
+                "reference": "ec1cfd918e99e9ff7b0028449c6e53528fb2f1a3"
             },
             "require": {
                 "accordsync/server": "^0.3",
@@ -102,11 +102,11 @@
         },
         {
             "name": "accordsync/server",
-            "version": "0.3.1",
+            "version": "0.3.2",
             "dist": {
                 "type": "path",
                 "url": "packages/server",
-                "reference": "6c899d869d17884c49bc8b8892601ddd6ee12fcb"
+                "reference": "e72a213a288d66f32bccf0ac5437ce7eca0caaa2"
             },
             "require": {
                 "accordsync/core": "^0.3",
@@ -150,11 +150,11 @@
         },
         {
             "name": "accordsync/symfony",
-            "version": "0.3.1",
+            "version": "0.3.2",
             "dist": {
                 "type": "path",
                 "url": "packages/symfony",
-                "reference": "99bac42e110fcecdbbe4872604e46a5d6a35b860"
+                "reference": "23f671701d0ba64d15150472ef08050a4f518fac"
             },
             "require": {
                 "accordsync/server": "^0.3",

@@ -11,7 +11,7 @@ This is the Accord **server** in PHP. It speaks the same protocol, merges by the
 the same PostgreSQL schema as [`@accordsync/server`](https://github.com/crossben/accordsync), so the
 TypeScript, React Native, Flutter and Python clients sync with it unchanged.
 
-> **Status: v0.3.0.** Pre-1.0: the API may still change between minor versions. Website and docs:
+> **Status: v0.3.2.** Pre-1.0: the API may still change between minor versions. Website and docs:
 > [accord.benhattab.pro](https://accord.benhattab.pro/docs/php/).
 
 ```sh
